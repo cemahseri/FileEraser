@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30204.135
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{A0932CAB-5631-4E31-8368-EB593559A4DC}") = "FileEraser", "FileEraser.csproj", "{1D1F8A77-988C-4D20-B997-2F357FBEE904}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D1F8A77-988C-4D20-B997-2F357FBEE904}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D1F8A77-988C-4D20-B997-2F357FBEE904}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D1F8A77-988C-4D20-B997-2F357FBEE904}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D1F8A77-988C-4D20-B997-2F357FBEE904}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D3A06AFB-3A2E-4E7A-8BB6-B06EAF66A142}
+	EndGlobalSection
+EndGlobal

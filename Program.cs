@@ -14,7 +14,7 @@ namespace FileEraser
             }
 
             var mainDirectory = new DirectoryInfo(args[0]);
-            
+
             // "*.*" will only get files with extensions. But "*" will get every file.
             // And if SearchOption.AllDirectories wasn't used, it wouldn't be recursive scan and it'd only get the files in the target path, with not including files in the child directories.
             Console.WriteLine("Getting files...");
@@ -47,15 +47,14 @@ namespace FileEraser
                         throw new Exception("Stream doesn't support reading the file: " + file.FullName);
                     }
 
-                    if (!stream.CanSeek)
-                    {
-                        throw new Exception("Stream doesn't support manually setting position of itself: " +
-                                            file.FullName);
-                    }
-
                     if (!stream.CanWrite)
                     {
                         throw new Exception("Stream doesn't support overwriting the file: " + file.FullName);
+                    }
+
+                    if (!stream.CanSeek)
+                    {
+                        throw new Exception("Stream doesn't support manually setting position of itself: " + file.FullName);
                     }
 
                     // Might refactor this part later and combine those two methods in a single method.
@@ -93,7 +92,7 @@ namespace FileEraser
             // I've used @ prefix while naming the variable, because byte is a keyword that C# uses. So, if you would like to use a keyword that also C# uses, just use @ prefix.
             // Wrong:   var  string = "Hey!";
             // Correct: var @string = "Hey!";
-            foreach (var @byte in new byte[] { 0x00, 0xFF })
+            foreach (var @byte in new byte[]{ 0x00, 0xFF })
             {
                 while (stream.Position < stream.Length)
                 {
@@ -109,7 +108,6 @@ namespace FileEraser
                 // Verifying overwritten bytes.
                 while (stream.Position < stream.Length)
                 {
-
                     var readValue = stream.ReadByte();
                     if (readValue == -1) // -1 means that we are at the end of the stream. So, break the while loop, which is reading the stream.
                     {

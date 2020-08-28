@@ -10,3 +10,4 @@ FileEraser.exe C:\path\to\your\mom
 
 # To-Do
 - Add verification for third pass.
+- Improve performance.

@@ -87,7 +87,7 @@ namespace FileEraser
                 }
             }
 
-            var directories = mainDirectory.GetDirectories("*", SearchOption.AllDirectories);
+            var directories = mainDirectory.GetDirectories("*", SearchOption.AllDirectories).Where(d => d.GetFiles().Length == 0 && d.GetDirectories().Length == 0).ToList();
 
             foreach (var directory in directories)
             {
@@ -104,7 +104,7 @@ namespace FileEraser
             mainDirectory.Delete();
             Console.WriteLine("Directory deleted: " + mainDirectory.FullName + Environment.NewLine);
 
-            Console.WriteLine(directories.Length + " directories and " + files.Length + " files have been deleted safely.");
+            Console.WriteLine(directories.Count + " directories and " + files.Length + " files have been deleted safely.");
             Console.ReadKey();
         }
 

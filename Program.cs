@@ -100,7 +100,7 @@ namespace FileEraser
                 }
 
                 // Set back stream's position to the beginning.
-                stream.Seek(0, SeekOrigin.Begin);
+                stream.Position = 0;
 
                 // Now flushing modified stream to the file to overwrite the content.
                 stream.Flush();
@@ -120,7 +120,7 @@ namespace FileEraser
                     }
                 }
 
-                stream.Seek(0, SeekOrigin.Begin);
+                stream.Position = 0;
             }
         }
 

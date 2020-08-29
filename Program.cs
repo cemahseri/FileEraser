@@ -6,6 +6,18 @@ namespace FileEraser
 {
     internal static class Program
     {
+        // Streams' default buffer size is 4096 bytes. That is not really useful for reading or writing big files.
+        // So, instead of 4 KBs, using 4 MBs as the buffer size will be better.
+        private const int BufferSize = 4 * 1024 * 1024;
+
+        // We are allocating an array with 4,194,304 (4 * 1024 * 1024) items. Array's type is byte, so each item will take 1 byte.
+        // So, array will take 4 MBs in the memory. This buffer is for overwriting the files. Writing byte by byte is so slow.
+        private static readonly byte[] Buffer = new byte[BufferSize];
+
+        // This is for verification process. We could create an array as a local variable but allocating memory and Garbage Collecting every time will affect the performance.
+        // So, create an array once, always change its content and never allow GC to run.
+        private static readonly byte[] TemporaryBuffer = new byte[BufferSize];
+
         private static void Main(string[] args)
         {
             if (args.Length < 1)
@@ -28,19 +40,20 @@ namespace FileEraser
             }
 
             Console.WriteLine("Files to delete: " + files.Length + Environment.NewLine);
-
+            
             // OrderBy method is not really necessary here. Just sorting files based on their sizes. It means that smallest file will get deleted first.
             foreach (var file in files.OrderBy(f => f.Length))
             {
                 // Removing other attributes, if present, to delete the file without any errors.
                 File.SetAttributes(file.FullName, FileAttributes.Normal);
 
-                // If file's size is equals to 0, it means that there is no bytes to overwrite. So, skip this part and directly delete it.
+                var shouldDelete = true;
+
+                // If file's size is equals to 0, it means that there is no byte to overwrite. So, skip this part and directly delete it.
                 if (file.Length != 0)
                 {
                     // We have to lock the file with FileShare.None, because any other write operation shouldn't be allowed. It may interrupt our writing and verifying process.
-                    // And using 4 MBs as the buffer size, because it'll help reading big files. (P.S. Default buffer size is 4 KBs.)
-                    using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.ReadWrite, FileShare.None, 4 * 1024 * 1024);
+                    using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.ReadWrite, FileShare.None, BufferSize);
 
                     if (!stream.CanRead)
                     {
@@ -57,13 +70,21 @@ namespace FileEraser
                         throw new Exception("Stream doesn't support manually setting position of itself: " + file.FullName);
                     }
 
-                    // Might refactor this part later and combine those two methods in a single method.
-                    PerformFirstTwoPasses(stream);
-                    PerformThirdPass(stream);
+                    Overwrite(stream);
+
+                    if (!IsFullOfZeros(stream))
+                    {
+                        Console.WriteLine("Verifying failed. File's content isn't full of 00 bytes. Skipping deleting file: " + file.FullName);
+
+                        shouldDelete = false;
+                    }
                 }
 
-                file.Delete();
-                Console.WriteLine("File deleted: " + file.FullName);
+                if (shouldDelete)
+                {
+                    file.Delete();
+                    Console.WriteLine("File deleted: " + file.FullName);
+                }
             }
 
             var directories = mainDirectory.GetDirectories("*", SearchOption.AllDirectories);
@@ -71,7 +92,7 @@ namespace FileEraser
             foreach (var directory in directories)
             {
                 // Again, if you don't set directory's attributes to FileAttributes.Normal, you cannot delete the directory successfully. It can occur problems sometimes.
-                // And don't think like "Hey! You are using File.SetAttribute! But a folder ain't file! WTF?!" Because a folder is basically a file, with FileAttributes.Directory attribute.
+                // You might think "Hey! You are using File.SetAttribute! But a folder ain't file! WTF?!" Well, a folder is basically a file, with FileAttributes.Directory attribute.
                 File.SetAttributes(directory.FullName, FileAttributes.Normal);
 
                 directory.Delete();
@@ -83,60 +104,66 @@ namespace FileEraser
             mainDirectory.Delete();
             Console.WriteLine("Directory deleted: " + mainDirectory.FullName + Environment.NewLine);
 
-            Console.WriteLine(directories.Length + " directories and " + files.Length + " files have been deleted safely."); 
+            Console.WriteLine(directories.Length + " directories and " + files.Length + " files have been deleted safely.");
             Console.ReadKey();
         }
 
-        private static void PerformFirstTwoPasses(Stream stream)
+        private static void Overwrite(Stream stream)
         {
-            // I've used @ prefix while naming the variable, because byte is a keyword that C# uses. So, if you would like to use a keyword that also C# uses, just use @ prefix.
-            // Wrong:   var  string = "Hey!";
-            // Correct: var @string = "Hey!";
-            foreach (var @byte in new byte[]{ 0x00, 0xFF })
+            var numberOfChunks = stream.Length / BufferSize;
+
+            // First, writing as chunks.
+            for (var i = 0; i < numberOfChunks; ++i)
             {
-                while (stream.Position < stream.Length)
-                {
-                    stream.WriteByte(@byte);
-                }
-
-                // Set back stream's position to the beginning.
-                stream.Position = 0;
-
-                // Now flushing modified stream to the file to overwrite the content.
-                stream.Flush();
-
-                // Verifying overwritten bytes.
-                while (stream.Position < stream.Length)
-                {
-                    var readValue = stream.ReadByte();
-                    if (readValue == -1) // -1 means that we are at the end of the stream. So, break the while loop, which is reading the stream.
-                    {
-                        break;
-                    }
-
-                    if (readValue != @byte)
-                    {
-                        throw new Exception($"{@byte:X2} byte is expected but instead received {readValue:X2}. Verifying failed. Aborting deleting process.");
-                    }
-                }
-
-                stream.Position = 0;
+                stream.Write(Buffer, 0, BufferSize);
             }
+
+            // Then overwriting the remaining bytes.
+            if (stream.Position != stream.Length)
+            {
+                stream.Write(Buffer, 0, (int)(stream.Length % BufferSize));
+            }
+
+            // Set back stream's position to the beginning, for the verifying process.
+            stream.Position = 0;
         }
 
-        private static void PerformThirdPass(Stream stream)
+        private static bool IsFullOfZeros(Stream stream)
         {
-            var random = new Random();
+            var numberOfChunks = stream.Length / BufferSize;
 
-            while (stream.Position < stream.Length)
+            // Verifying overwritten bytes.
+            var remainingBytes = (int)stream.Length;
+
+            // First, reading as chunks.
+            for (var chunk = 0; chunk < numberOfChunks; ++chunk)
             {
-                stream.WriteByte((byte)random.Next(0, 256));
+                remainingBytes -= stream.Read(TemporaryBuffer, 0, BufferSize);
+
+                for (var i = 0; i < BufferSize; i++)
+                {
+                    if (TemporaryBuffer[i] != 0x00)
+                    {
+                        return false;
+                    }
+                }
             }
 
-            // Currently, I am not verifying the third pass. I'm not sure if we even have to verify the third pass or not.
-            // Anyways, might add that later.
+            // Then reading the remaining bytes.
+            while (remainingBytes > 0)
+            {
+                remainingBytes -= stream.Read(TemporaryBuffer, 0, remainingBytes);
 
-            stream.Flush();
+                for (var i = 0; i < remainingBytes; i++)
+                {
+                    if (TemporaryBuffer[i] != 0x00)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }

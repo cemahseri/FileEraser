@@ -87,6 +87,7 @@ namespace FileEraser
                 }
             }
 
+            // Excluding folders with files or any other folders, because directories must be empty to be get deleted.
             var directories = mainDirectory.GetDirectories("*", SearchOption.AllDirectories).Where(d => d.GetFiles().Length == 0 && d.GetDirectories().Length == 0).ToList();
 
             foreach (var directory in directories)

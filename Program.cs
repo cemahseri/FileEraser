@@ -114,7 +114,7 @@ namespace FileEraser
             var numberOfChunks = stream.Length / BufferSize;
 
             // First, writing as chunks.
-            for (var i = 0; i < numberOfChunks; ++i)
+            for (var i = 0; i < numberOfChunks; i++)
             {
                 stream.Write(Buffer, 0, BufferSize);
             }
@@ -137,7 +137,7 @@ namespace FileEraser
             var remainingBytes = (int)stream.Length;
 
             // First, reading as chunks.
-            for (var chunk = 0; chunk < numberOfChunks; ++chunk)
+            for (var chunk = 0; chunk < numberOfChunks; chunk++)
             {
                 remainingBytes -= stream.Read(TemporaryBuffer, 0, BufferSize);
 

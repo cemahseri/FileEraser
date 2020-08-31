@@ -40,7 +40,7 @@ namespace FileEraser
             }
 
             Console.WriteLine("Files to delete: " + files.Length + Environment.NewLine);
-            
+
             // OrderBy method is not really necessary here. Just sorting files based on their sizes. It means that smallest file will get deleted first.
             foreach (var file in files.OrderBy(f => f.Length))
             {

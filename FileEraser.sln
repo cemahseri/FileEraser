@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30204.135
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{A0932CAB-5631-4E31-8368-EB593559A4DC}") = "FileEraser", "FileEraser.csproj", "{1D1F8A77-988C-4D20-B997-2F357FBEE904}"
 EndProject
